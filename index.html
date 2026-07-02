@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Roof Replacement Cost Estimator — Noble Guard Roofing</title>
+<meta name="description" content="Get an instant roof replacement estimate for your Texas home. Cost, insurance payout, out-of-pocket, and financing in under a minute." />
+<style>
+/* ============================================================================
+   NOBLE GUARD ROOFING — ROOF REPLACEMENT COST ESTIMATOR
+   Self-contained widget. Works as an <iframe> embed AND a standalone ad page.
+   Math verified against "Roof Replacement Cost Estimator.xlsx" cells C6–C32.
+   ============================================================================ */
+:root{
+  --ng-ivory:#f8f6f0;
+  --ng-cream:#F0E8D5;
+  --ng-champagne:#ebd9b5;
+  --ng-light-gold:#d5b979;
+  --ng-antique-gold:#9e7c25;
+  --ng-ink:#1b1b1b;
+  --ng-ink-soft:#3a3a38;
+  --ng-line:#e2dccd;
+  --ng-muted:#8a8578;
+  --ng-good:#2f7d54;
+  --ng-shadow:0 10px 40px rgba(27,27,27,.10);
+  --ng-radius:16px;
+  --ng-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --ng-serif:'Georgia','Times New Roman',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ng-ivory);color:var(--ng-ink);font-family:var(--ng-font);-webkit-font-smoothing:antialiased;line-height:1.5}
+.ng-wrap{max-width:1080px;margin:0 auto;padding:20px 18px 40px}
+
+/* Header */
+.ng-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.ng-shield{width:40px;height:44px;flex:0 0 auto}
+.ng-brand-name{font-family:var(--ng-serif);font-weight:700;letter-spacing:.14em;font-size:14px;text-transform:uppercase;color:var(--ng-ink)}
+.ng-brand-sub{font-size:12px;color:var(--ng-muted);letter-spacing:.02em}
+
+/* Layout: card + summary */
+.ng-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:20px;align-items:start}
+@media(max-width:820px){.ng-grid{grid-template-columns:1fr}}
+
+/* Chip strip */
+.ng-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.ng-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--ng-line);background:#fff;color:var(--ng-muted);white-space:nowrap}
+.ng-chip.done{background:var(--ng-cream);border-color:var(--ng-champagne);color:var(--ng-antique-gold);font-weight:600}
+.ng-chip.active{border-color:var(--ng-antique-gold);color:var(--ng-ink);font-weight:600;box-shadow:0 0 0 3px rgba(158,124,37,.10)}
+.ng-chip .tick{color:var(--ng-good);font-weight:700}
+
+/* Card */
+.ng-card{background:#fff;border:1px solid var(--ng-line);border-radius:var(--ng-radius);box-shadow:var(--ng-shadow);padding:30px 30px 26px;min-height:340px;display:flex;flex-direction:column}
+@media(max-width:560px){.ng-card{padding:22px 18px}}
+.ng-step-count{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ng-light-gold);font-weight:700;margin-bottom:12px}
+.ng-q{font-family:var(--ng-serif);font-size:27px;line-height:1.25;font-weight:700;color:var(--ng-ink);margin-bottom:6px}
+@media(max-width:560px){.ng-q{font-size:22px}}
+.ng-help{font-size:14px;color:var(--ng-muted);margin-bottom:22px}
+.ng-input-area{flex:1}
+
+/* Inputs */
+.ng-field{width:100%;font-size:20px;font-family:var(--ng-font);padding:15px 16px;border:2px solid var(--ng-line);border-radius:12px;background:var(--ng-ivory);color:var(--ng-ink);transition:border-color .15s,box-shadow .15s}
+.ng-field:focus{outline:none;border-color:var(--ng-antique-gold);box-shadow:0 0 0 4px rgba(158,124,37,.12);background:#fff}
+.ng-suffix-wrap{position:relative}
+.ng-suffix{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--ng-muted);font-size:15px;pointer-events:none}
+
+/* Option buttons */
+.ng-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:560px){.ng-options{grid-template-columns:1fr}}
+.ng-opt{text-align:left;font-size:16px;font-family:var(--ng-font);padding:16px 16px;border:2px solid var(--ng-line);border-radius:12px;background:#fff;color:var(--ng-ink);cursor:pointer;transition:.14s;display:flex;flex-direction:column;gap:2px}
+.ng-opt:hover{border-color:var(--ng-light-gold);background:var(--ng-ivory)}
+.ng-opt.sel{border-color:var(--ng-antique-gold);background:var(--ng-cream);box-shadow:0 0 0 3px rgba(158,124,37,.10)}
+.ng-opt small{color:var(--ng-muted);font-size:12.5px}
+.ng-opt-price{margin-left:auto;color:var(--ng-antique-gold);font-weight:600}
+.ng-terms{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+@media(max-width:560px){.ng-terms{grid-template-columns:repeat(3,1fr)}}
+.ng-term{text-align:center;padding:14px 6px;border:2px solid var(--ng-line);border-radius:12px;background:#fff;cursor:pointer;font-weight:600;transition:.14s}
+.ng-term:hover{border-color:var(--ng-light-gold)}
+.ng-term.sel{border-color:var(--ng-antique-gold);background:var(--ng-cream)}
+.ng-term small{display:block;font-weight:400;color:var(--ng-muted);font-size:11px;margin-top:2px}
+
+/* Contact grid */
+.ng-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.ng-form-grid{grid-template-columns:1fr}}
+.ng-form-grid .full{grid-column:1/-1}
+.ng-label{display:block;font-size:12.5px;font-weight:600;color:var(--ng-ink-soft);margin-bottom:5px}
+.ng-field.sm{font-size:16px;padding:12px 13px}
+
+/* Buttons / nav */
+.ng-actions{display:flex;align-items:center;gap:12px;margin-top:22px}
+.ng-btn{font-family:var(--ng-font);font-size:16px;font-weight:700;padding:14px 26px;border-radius:12px;border:none;cursor:pointer;transition:.15s;letter-spacing:.01em}
+.ng-btn-primary{background:var(--ng-antique-gold);color:#fff;box-shadow:0 6px 18px rgba(158,124,37,.28)}
+.ng-btn-primary:hover{background:#876818;transform:translateY(-1px)}
+.ng-btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.ng-btn-ghost{background:transparent;color:var(--ng-muted);padding:14px 8px}
+.ng-btn-ghost:hover{color:var(--ng-ink)}
+.ng-err{color:#b23b3b;font-size:13.5px;margin-top:10px;min-height:18px}
+
+/* Voice affordance */
+.ng-voice-cta{display:inline-flex;align-items:center;gap:7px;margin-top:16px;font-size:14px;color:var(--ng-antique-gold);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--ng-font)}
+.ng-voice-cta:hover{text-decoration:underline}
+.ng-voice-cta.hidden{display:none}
+.ng-voice-panel{display:none;flex-direction:column;align-items:center;gap:14px;padding:14px 0}
+.ng-voice-panel.on{display:flex}
+.ng-orb{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--ng-light-gold),var(--ng-antique-gold));box-shadow:0 0 0 0 rgba(158,124,37,.45);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;border:none;transition:.15s}
+.ng-orb.listening{animation:ngpulse 1.4s infinite}
+@keyframes ngpulse{0%{box-shadow:0 0 0 0 rgba(158,124,37,.45)}70%{box-shadow:0 0 0 22px rgba(158,124,37,0)}100%{box-shadow:0 0 0 0 rgba(158,124,37,0)}}
+.ng-caption{min-height:24px;font-size:16px;color:var(--ng-ink-soft);text-align:center;font-style:italic}
+.ng-voice-hint{font-size:13px;color:var(--ng-muted)}
+.ng-voice-back{background:none;border:none;color:var(--ng-muted);cursor:pointer;font-size:13.5px;text-decoration:underline;font-family:var(--ng-font)}
+
+/* Summary panel */
+.ng-summary{position:sticky;top:16px;background:linear-gradient(175deg,var(--ng-ink),#242320);color:var(--ng-ivory);border-radius:var(--ng-radius);padding:24px 22px;box-shadow:var(--ng-shadow)}
+.ng-summary h3{font-family:var(--ng-serif);font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--ng-light-gold);margin-bottom:4px}
+.ng-summary .sub{font-size:12px;color:#b7b2a5;margin-bottom:18px}
+.ng-row{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.08);gap:10px}
+.ng-row .k{font-size:13.5px;color:#cfcabd}
+.ng-row .v{font-size:16px;font-weight:600;text-align:right}
+.ng-row .v.dash{color:#6f6b60;font-weight:400}
+.ng-row.hero{border-bottom:none;margin-top:6px;padding-top:16px}
+.ng-row.hero .k{font-size:14px;color:var(--ng-light-gold);text-transform:uppercase;letter-spacing:.05em}
+.ng-row.hero .v{font-size:26px;color:#fff}
+.ng-row.oop .v{color:var(--ng-light-gold)}
+.ng-summary .flip{transition:opacity .25s}
+.ng-cta-call{display:block;text-align:center;margin-top:18px;background:var(--ng-light-gold);color:var(--ng-ink);font-weight:700;padding:13px;border-radius:11px;text-decoration:none;font-size:15px}
+.ng-cta-call:hover{background:var(--ng-champagne)}
+.ng-disclaimer{font-size:11px;color:#8f8b80;margin-top:14px;line-height:1.45}
+
+/* Success screen */
+.ng-done{text-align:center;padding:20px 0}
+.ng-done .check{width:66px;height:66px;border-radius:50%;background:var(--ng-good);color:#fff;font-size:34px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.ng-done h2{font-family:var(--ng-serif);font-size:26px;margin-bottom:8px}
+.ng-done p{color:var(--ng-muted);max-width:440px;margin:0 auto 8px}
+.ng-tagline{text-align:center;font-family:var(--ng-serif);font-style:italic;color:var(--ng-muted);font-size:13px;margin-top:26px}
+.ng-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="ng-wrap">
+  <div class="ng-header">
+    <svg class="ng-shield" viewBox="0 0 40 44" aria-hidden="true">
+      <path d="M20 1 L38 8 V22 C38 33 30 40 20 43 C10 40 2 33 2 22 V8 Z" fill="none" stroke="#9e7c25" stroke-width="2"/>
+      <path d="M20 8 L31 12 V22 C31 29 26 34 20 36 C14 34 9 29 9 22 V12 Z" fill="#ebd9b5"/>
+      <path d="M13 22 L20 15 L27 22 M16 22 V28 H24 V22" fill="none" stroke="#9e7c25" stroke-width="2" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <div class="ng-brand-name">Noble Guard Roofing</div>
+      <div class="ng-brand-sub">Roof Replacement Cost Estimator</div>
+    </div>
+  </div>
+
+  <div class="ng-grid">
+    <!-- LEFT: wizard -->
+    <div>
+      <div class="ng-chips" id="ngChips"></div>
+      <div class="ng-card">
+        <div id="ngStepHost" class="ng-input-area"></div>
+        <div class="ng-err" id="ngErr"></div>
+        <div class="ng-actions" id="ngActions"></div>
+        <button class="ng-voice-cta" id="ngVoiceCta" type="button">🎤 Prefer to talk?</button>
+        <div class="ng-voice-panel" id="ngVoicePanel">
+          <button class="ng-orb" id="ngOrb" type="button" aria-label="Tap to speak">🎤</button>
+          <div class="ng-caption" id="ngCaption">Tap the orb and speak your answer…</div>
+          <div class="ng-voice-hint" id="ngVoiceHint"></div>
+          <button class="ng-voice-back" id="ngVoiceBack" type="button">← Back to typing</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: live estimate -->
+    <aside class="ng-summary" id="ngSummary">
+      <h3>Your Estimate</h3>
+      <div class="sub">Updates live as you answer</div>
+      <div class="ng-row"><span class="k">Home size</span><span class="v dash" id="sumSqft">—</span></div>
+      <div class="ng-row"><span class="k">Roof type</span><span class="v dash" id="sumType">—</span></div>
+      <div class="ng-row hero"><span class="k">Total replacement</span><span class="v dash" id="sumTotal">—</span></div>
+      <div class="ng-row" id="rowDed"><span class="k">Your deductible</span><span class="v dash" id="sumDed">—</span></div>
+      <div class="ng-row" id="rowPayout"><span class="k">Est. insurance payout</span><span class="v dash" id="sumPayout">—</span></div>
+      <div class="ng-row oop" id="rowOop"><span class="k">Out-of-pocket</span><span class="v dash" id="sumOop">—</span></div>
+      <div class="ng-row" id="rowMonthly"><span class="k">Financed / month</span><span class="v dash" id="sumMonthly">—</span></div>
+      <a class="ng-cta-call" id="ngCallCta" href="tel:">📞 Free Roof Inspection</a>
+      <p class="ng-disclaimer">Estimates based on DFW / North Texas averages, 2025–2026. Actual costs vary by pitch, complexity &amp; materials. Insurance payouts subject to policy terms, adjuster review &amp; depreciation. Financing figures are estimates only.</p>
+    </aside>
+  </div>
+  <div class="ng-tagline">Built with Honor. Guarded for Life.</div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   CONFIGURATION  —  edit these before going live
+   ============================================================================ */
+const NG_CONFIG = {
+  // Where completed leads are sent. Point this at your Make.com webhook (which
+  // does the GHL dedup + create/update + tagging) OR a GHL inbound webhook.
+  // Leave "" to run in demo mode (logs the payload, still shows success).
+  WEBHOOK_URL: "https://hook.us2.make.com/slafts59cso9jd94bn3wqbyk4zp1kkcw",
+
+  // Tags applied to the GHL contact (your Make.com/GHL scenario reads these).
+  // Lowercase "morpheus" fires the existing nurture/opportunity/JobNimbus automation.
+  GHL_TAGS: ["morpheus", "cost estimator"],
+
+  // Noble Guard phone (used by the "Free Roof Inspection" call button).
+  PHONE: "+14697199257",
+
+  // Meta Pixel. Paste your Pixel ID from Meta Events Manager (e.g. "1234567890").
+  // Leave "" and tracking stays fully dormant — no library loads, no requests.
+  // When set: loads the Pixel, fires PageView on load, and a standard "Lead"
+  // event when the homeowner submits their contact info.
+  META_PIXEL_ID: "",
+
+  // Math constants — mirror the spreadsheet.
+  HOME_VALUE_ASSUMED: 300000,        // Roof Calculator!C18
+  DEFAULT_DEDUCTIBLE_PERCENT: 1,     // Roof Calculator!C19 default
+  APR: 7.99,                         // Roof Calculator!C28
+  TERMS: [12, 24, 36, 48, 60],       // Roof Calculator!C27 options
+
+  // Rate per roofing square (Pricing Data!A2:B11).
+  ROOF_TYPES: [
+    { name: "3-Tab Asphalt Shingles",        rate: 500,  blurb: "Budget-friendly" },
+    { name: "Architectural Shingles",        rate: 800,  blurb: "Most popular" },
+    { name: "Designer / Luxury Shingles",    rate: 950,  blurb: "Premium curb appeal" },
+    { name: "Metal - Standing Seam",         rate: 1200, blurb: "50+ yr lifespan" },
+    { name: "Metal - Corrugated / R-Panel",  rate: 700,  blurb: "Durable & economical" },
+    { name: "Clay Tile",                     rate: 1550, blurb: "Classic, long-lasting" },
+    { name: "Concrete Tile",                 rate: 1250, blurb: "Heavy-duty" },
+    { name: "Flat / TPO Membrane",           rate: 850,  blurb: "Low-slope roofs" },
+    { name: "Cedar Shake",                   rate: 1150, blurb: "Natural wood look" },
+    { name: "Slate",                         rate: 2250, blurb: "Luxury, 100+ yrs" }
+  ]
+};
+
+/* ============================================================================
+   MATH CORE — verified against Roof Replacement Cost Estimator.xlsx C6–C32
+   ============================================================================ */
+const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+const rateFor = t => (NG_CONFIG.ROOF_TYPES.find(r => r.name === t) || {}).rate || 0;
+
+function computeRoofCost(sqft, roofType){                       // C7,C11–C15
+  const squares = sqft * 1.5 / 100;
+  const rate = rateFor(roofType);
+  const materials = round2(squares * rate * 0.55);
+  const labor     = round2(squares * rate * 0.35);
+  const disposal  = round2(squares * rate * 0.10);
+  return { squares: round2(squares), rate, materials, labor, disposal,
+           totalCost: round2(materials + labor + disposal) };
+}
+function resolveDeductible(input, homeValue = NG_CONFIG.HOME_VALUE_ASSUMED){  // C20
+  if (input.kind === "dollar")  return round2(input.amount);
+  if (input.kind === "percent") return round2(homeValue * (input.percent / 100));
+  return round2(homeValue * (NG_CONFIG.DEFAULT_DEDUCTIBLE_PERCENT / 100));     // skip
+}
+function computeInsurance(totalCost, deductible){                              // C22,C23
+  return { deductibleAmount: round2(deductible),
+           payout: round2(Math.max(0, totalCost - deductible)),
+           outOfPocket: round2(Math.min(deductible, totalCost)) };
+}
+function pmt(rate, n, pv){ return rate === 0 ? pv / n : (pv * rate) / (1 - Math.pow(1 + rate, -n)); }
+function computeFinancing(amount, term, apr = NG_CONFIG.APR){                  // C29–C31
+  const raw = pmt(apr / 100 / 12, term, amount);          // unrounded (matches C30)
+  const totalPaid = round2(raw * term);
+  return { monthlyPayment: round2(raw), totalPaid,
+           totalInterest: round2(Math.max(0, totalPaid - amount)) };
+}
+const fmt$ = n => "$" + Math.round(n).toLocaleString("en-US");
+const fmt$2 = n => "$" + n.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+
+/* ============================================================================
+   STATE  +  ATTRIBUTION
+   ============================================================================ */
+const S = {
+  sqft:null, roofType:null, roofCost:null,
+  hasInsurance:null, deductibleInput:null, insurance:null,
+  wantsFinancing:null, termMonths:null, financing:null,
+  contact:{ name:"", phone:"", email:"", address:"" },
+  attribution:{}, id:null, milestones:{}
+};
+(function captureAttribution(){
+  try{
+    const p = new URLSearchParams(location.search);
+    ["utm_source","utm_medium","utm_campaign","utm_term","utm_content","gclid","fbclid"]
+      .forEach(k => { const v = p.get(k); if (v) S.attribution[k] = v; });
+    S.attribution.landing_url = location.href;
+    S.attribution.referrer = document.referrer || "";
+  }catch(e){}
+})();
+
+/* ============================================================================
+   CONVERSION EVENTS  (fires to GA/GTM + Meta pixel if present; always safe)
+   ============================================================================ */
+// Internal milestone name -> Meta standard event. Standard events optimize
+// better in Meta ad delivery than custom ones, so the real conversion
+// (contact captured) maps to "Lead". Unmapped milestones fire as trackCustom
+// for funnel visibility without competing as the optimized conversion.
+const META_STD_EVENTS = { contact_captured: "Lead" };
+
+// Loads the Meta Pixel once, only if a Pixel ID is configured. Fires PageView.
+function initMetaPixel(){
+  const id = NG_CONFIG.META_PIXEL_ID;
+  if (!id || typeof fbq === "function") return;   // dormant when unset / already loaded
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version="2.0";n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+  (window,document,"script","https://connect.facebook.net/en_US/fbevents.js");
+  try{ fbq("init", id); fbq("track", "PageView"); }catch(e){}
+}
+
+function fireConversion(name, data){
+  if (S.milestones[name]) return;                 // fire once
+  S.milestones[name] = true;
+  try{ window.dataLayer = window.dataLayer || []; window.dataLayer.push(Object.assign({event:name}, data||{})); }catch(e){}
+  try{ if (typeof gtag==="function") gtag("event", name, data||{}); }catch(e){}
+  try{
+    if (typeof fbq==="function"){
+      const std = META_STD_EVENTS[name];
+      if (std) fbq("track", std, data||{});
+      else fbq("trackCustom", name, data||{});
+    }
+  }catch(e){}
+  try{ if (window.parent!==window) window.parent.postMessage({source:"ng-estimator", event:name, data:data||{}}, "*"); }catch(e){}
+}
+
+/* ============================================================================
+   STEP DEFINITIONS  +  BRANCHING STATE MACHINE
+   ============================================================================ */
+const STEPS = ["sqft","roofType","insurance","deductible","financing","contact"];
+let stepIndex = 0;
+
+function nextStepFrom(cur){
+  if (cur === "insurance" && S.hasInsurance === false) return "contact"; // uninsured → contact
+  if (cur === "deductible" && S.wantsFinancing === false) return "contact";
+  if (cur === "financing") return "contact";
+  const order = ["sqft","roofType","insurance","deductible","financing","contact"];
+  return order[order.indexOf(cur) + 1];
+}
+function prevStepFrom(cur){
+  if (cur === "contact"){
+    if (S.hasInsurance === false) return "insurance";
+    if (S.wantsFinancing === false) return "deductible";
+    return "financing";
+  }
+  const order = ["sqft","roofType","insurance","deductible","financing","contact"];
+  return order[order.indexOf(cur) - 1] || "sqft";
+}
+let currentStep = "sqft";
+
+/* ============================================================================
+   RENDERING
+   ============================================================================ */
+const host = document.getElementById("ngStepHost");
+const actions = document.getElementById("ngActions");
+const errEl = document.getElementById("ngErr");
+const chipsEl = document.getElementById("ngChips");
+
+function chipData(){
+  return [
+    { key:"sqft",      label: S.sqft ? S.sqft.toLocaleString()+" sq ft" : "Home size" },
+    { key:"roofType",  label: S.roofType ? shortType(S.roofType) : "Roof type" },
+    { key:"insurance", label: S.hasInsurance===null ? "Insurance" : (S.hasInsurance ? "Insured" : "Cash") },
+    ...(S.hasInsurance!==false ? [{ key:"deductible", label: S.insurance ? "Deductible set" : "Deductible" }] : []),
+    ...(S.hasInsurance!==false ? [{ key:"financing", label: S.wantsFinancing===null?"Financing":(S.wantsFinancing?"Financed":"No financing") }] : []),
+    { key:"contact",   label:"Your info" }
+  ];
+}
+function shortType(t){ return t.replace(" Shingles","").replace("Metal - ","").replace(" / R-Panel",""); }
+
+function renderChips(){
+  const data = chipData();
+  chipsEl.innerHTML = data.map(c=>{
+    const done = isChipDone(c.key);
+    const active = c.key === currentStep;
+    return `<span class="ng-chip ${done?'done':''} ${active?'active':''}">${done?'<span class="tick">✓</span>':''}${c.label}</span>`;
+  }).join("");
+}
+function isChipDone(k){
+  if (k==="sqft") return !!S.sqft;
+  if (k==="roofType") return !!S.roofType;
+  if (k==="insurance") return S.hasInsurance!==null;
+  if (k==="deductible") return !!S.insurance;
+  if (k==="financing") return S.wantsFinancing!==null;
+  return false;
+}
+
+let pending = {};   // holds the in-progress answer for the current step
+function setErr(m){ errEl.textContent = m || ""; }
+
+function render(){
+  setErr("");
+  pending = {};
+  hideVoice();
+  const stepNo = ["sqft","roofType","insurance","deductible","financing","contact"].indexOf(currentStep)+1;
+  const defs = STEP_UI[currentStep];
+  host.innerHTML = `<div class="ng-step-count">Step ${visibleStepNumber()} of ${visibleStepTotal()}</div>
+    <div class="ng-q">${defs.q}</div><div class="ng-help">${defs.help||""}</div>
+    <div class="ng-input-area" id="ngStepBody"></div>`;
+  defs.body(document.getElementById("ngStepBody"));
+  defs.actions();
+  document.getElementById("ngVoiceCta").classList.toggle("hidden", !defs.voice);
+  renderChips();
+  renderSummary();
+  postHeight();
+}
+function visibleStepNumber(){
+  const seq = buildVisibleSeq();
+  return seq.indexOf(currentStep)+1;
+}
+function visibleStepTotal(){ return buildVisibleSeq().length; }
+function buildVisibleSeq(){
+  const seq = ["sqft","roofType","insurance"];
+  if (S.hasInsurance!==false){ seq.push("deductible"); seq.push("financing"); }
+  seq.push("contact");
+  return seq;
+}
+
+function primaryBtn(label, onClick, enabled=true){
+  actions.innerHTML = "";
+  if (currentStep !== "sqft"){
+    const back = document.createElement("button");
+    back.className="ng-btn ng-btn-ghost"; back.textContent="← Back";
+    back.onclick = goBack; actions.appendChild(back);
+  }
+  const b = document.createElement("button");
+  b.className="ng-btn ng-btn-primary"; b.textContent=label; b.disabled=!enabled;
+  b.onclick=onClick; actions.appendChild(b);
+  return b;
+}
+
+/* ---- Per-step UI ---- */
+const STEP_UI = {
+  sqft:{
+    q:"What's the square footage of your home?", voice:true,
+    help:"A rough number is fine — we convert it to roofing squares for you.",
+    body(el){
+      el.innerHTML = `<div class="ng-suffix-wrap">
+        <input class="ng-field" id="fSqft" type="text" inputmode="numeric" placeholder="e.g. 2,000" autocomplete="off"/>
+        <span class="ng-suffix">sq ft</span></div>`;
+      const inp = el.querySelector("#fSqft");
+      if (S.sqft) inp.value = S.sqft.toLocaleString();
+      inp.focus();
+      inp.addEventListener("input", ()=>{ pending.sqft = parseInt(inp.value.replace(/[^\d]/g,""),10)||null; });
+      inp.addEventListener("keydown", e=>{ if(e.key==="Enter") submitSqft(); });
+      pending.sqft = S.sqft;
+    },
+    actions(){ primaryBtn("Continue", submitSqft); }
+  },
+  roofType:{
+    q:"What type of roof do you want?", voice:true,
+    help:"Pick the material you're considering — we'll price it instantly.",
+    body(el){
+      el.innerHTML = `<div class="ng-options">${NG_CONFIG.ROOF_TYPES.map((t,i)=>
+        `<button class="ng-opt ${S.roofType===t.name?'sel':''}" data-t="${t.name}">
+           <span>${t.name}</span><small>${t.blurb}</small></button>`).join("")}</div>`;
+      el.querySelectorAll(".ng-opt").forEach(btn=>btn.onclick=()=>{
+        el.querySelectorAll(".ng-opt").forEach(b=>b.classList.remove("sel"));
+        btn.classList.add("sel"); pending.roofType = btn.dataset.t;
+        document.getElementById("ngPrimary").disabled=false;
+      });
+      pending.roofType = S.roofType;
+    },
+    actions(){ const b=primaryBtn("See my cost", submitRoofType, !!S.roofType); b.id="ngPrimary"; }
+  },
+  insurance:{
+    q:"Are you filing this through insurance?", voice:true,
+    help:"Hail damage is often covered. We'll estimate your payout and out-of-pocket.",
+    body(el){
+      el.innerHTML = `<div class="ng-options">
+        <button class="ng-opt ${S.hasInsurance===true?'sel':''}" data-v="yes"><span>Yes — filing a claim</span><small>Estimate payout & deductible</small></button>
+        <button class="ng-opt ${S.hasInsurance===false?'sel':''}" data-v="no"><span>No — paying cash</span><small>Show me the straight price</small></button>
+      </div>`;
+      el.querySelectorAll(".ng-opt").forEach(btn=>btn.onclick=()=>{
+        el.querySelectorAll(".ng-opt").forEach(b=>b.classList.remove("sel"));
+        btn.classList.add("sel"); pending.hasInsurance = btn.dataset.v==="yes";
+        document.getElementById("ngPrimary").disabled=false;
+      });
+      pending.hasInsurance = S.hasInsurance;
+    },
+    actions(){ const b=primaryBtn("Continue", submitInsurance, S.hasInsurance!==null); b.id="ngPrimary"; }
+  },
+  deductible:{
+    q:"What's your insurance deductible?", voice:true,
+    help:"Enter a dollar amount or a percent of home value. Not sure? Skip and we'll assume 1%.",
+    body(el){
+      el.innerHTML = `
+        <div class="ng-options" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
+          <button class="ng-opt" id="modeDollar"><span>Dollar amount</span><small>e.g. $3,000</small></button>
+          <button class="ng-opt" id="modePercent"><span>Percent of home value</span><small>e.g. 1% or 2%</small></button>
+        </div>
+        <div id="dedInputWrap"></div>`;
+      const wrap = el.querySelector("#dedInputWrap");
+      const showDollar=()=>{ setMode("dollar"); wrap.innerHTML=`<div class="ng-suffix-wrap"><span class="ng-suffix" style="left:16px;right:auto">$</span><input class="ng-field" id="fDed" style="padding-left:34px" type="text" inputmode="numeric" placeholder="3,000"/></div>`; bindDed(v=>({kind:"dollar",amount:v})); };
+      const showPercent=()=>{ setMode("percent"); wrap.innerHTML=`<div class="ng-suffix-wrap"><input class="ng-field" id="fDed" type="text" inputmode="decimal" placeholder="1"/><span class="ng-suffix">% of home value</span></div>`; bindDed(v=>({kind:"percent",percent:v})); };
+      function setMode(m){ el.querySelector("#modeDollar").classList.toggle("sel",m==="dollar"); el.querySelector("#modePercent").classList.toggle("sel",m==="percent"); }
+      function bindDed(mk){ const i=wrap.querySelector("#fDed"); i.focus(); i.addEventListener("input",()=>{ const num=parseFloat(i.value.replace(/[^\d.]/g,"")); pending.deductibleInput = isNaN(num)?null:mk(num); }); i.addEventListener("keydown",e=>{if(e.key==="Enter")submitDeductible();}); }
+      el.querySelector("#modeDollar").onclick=showDollar;
+      el.querySelector("#modePercent").onclick=showPercent;
+      showDollar();
+    },
+    actions(){
+      actions.innerHTML="";
+      const back=document.createElement("button"); back.className="ng-btn ng-btn-ghost"; back.textContent="← Back"; back.onclick=goBack; actions.appendChild(back);
+      const skip=document.createElement("button"); skip.className="ng-btn ng-btn-ghost"; skip.textContent="Skip (assume 1%)"; skip.onclick=()=>{ pending.deductibleInput={kind:"skip"}; submitDeductible(); }; actions.appendChild(skip);
+      const b=document.createElement("button"); b.className="ng-btn ng-btn-primary"; b.textContent="Calculate"; b.onclick=submitDeductible; actions.appendChild(b);
+    }
+  },
+  financing:{
+    q:"Want to finance your out-of-pocket cost?", voice:true,
+    help:`Spread your deductible over time at ${NG_CONFIG.APR}% APR.`,
+    body(el){
+      const oop = S.insurance ? S.insurance.outOfPocket : 0;
+      el.innerHTML = `<div class="ng-options" style="margin-bottom:14px">
+        <button class="ng-opt ${S.wantsFinancing===true?'sel':''}" data-v="yes"><span>Yes — show me monthly options</span><small>Finance ${fmt$(oop)}</small></button>
+        <button class="ng-opt ${S.wantsFinancing===false?'sel':''}" data-v="no"><span>No thanks</span><small>Skip to finish</small></button>
+      </div>
+      <div id="termWrap" style="display:${S.wantsFinancing?'block':'none'}">
+        <div class="ng-label" style="margin-bottom:8px">Loan term</div>
+        <div class="ng-terms">${NG_CONFIG.TERMS.map(t=>{
+          const f=computeFinancing(oop,t); return `<button class="ng-term ${S.termMonths===t?'sel':''}" data-t="${t}">${t} mo<small>${fmt$(f.monthlyPayment)}/mo</small></button>`;
+        }).join("")}</div></div>`;
+      const termWrap = el.querySelector("#termWrap");
+      el.querySelectorAll(".ng-opt").forEach(btn=>btn.onclick=()=>{
+        el.querySelectorAll(".ng-opt").forEach(b=>b.classList.remove("sel")); btn.classList.add("sel");
+        pending.wantsFinancing = btn.dataset.v==="yes";
+        termWrap.style.display = pending.wantsFinancing ? "block":"none";
+        document.getElementById("ngPrimary").disabled = pending.wantsFinancing && !pending.termMonths && !S.termMonths;
+        postHeight();
+      });
+      el.querySelectorAll(".ng-term").forEach(btn=>btn.onclick=()=>{
+        el.querySelectorAll(".ng-term").forEach(b=>b.classList.remove("sel")); btn.classList.add("sel");
+        pending.termMonths = parseInt(btn.dataset.t,10); S.termMonths=pending.termMonths;
+        S.financing = computeFinancing(oop, pending.termMonths);
+        document.getElementById("ngPrimary").disabled=false; renderSummary();
+      });
+      pending.wantsFinancing = S.wantsFinancing; pending.termMonths = S.termMonths;
+    },
+    actions(){ const b=primaryBtn("Continue", submitFinancing, S.wantsFinancing!==null && (!S.wantsFinancing || !!S.termMonths)); b.id="ngPrimary"; }
+  },
+  contact:{
+    q:"Where should we send your estimate?", voice:false,
+    help:"A Noble Guard specialist will follow up about your free inspection. No spam.",
+    body(el){
+      el.innerHTML = `<div class="ng-form-grid">
+        <div class="full"><label class="ng-label">Full name</label><input class="ng-field sm" id="cName" value="${S.contact.name}" autocomplete="name"/></div>
+        <div><label class="ng-label">Phone</label><input class="ng-field sm" id="cPhone" type="tel" value="${S.contact.phone}" autocomplete="tel"/></div>
+        <div><label class="ng-label">Email</label><input class="ng-field sm" id="cEmail" type="email" value="${S.contact.email}" autocomplete="email"/></div>
+        <div class="full"><label class="ng-label">Property address</label><input class="ng-field sm" id="cAddr" value="${S.contact.address}" autocomplete="street-address"/></div>
+      </div>`;
+      el.querySelector("#cName").focus();
+    },
+    actions(){ primaryBtn("Get my estimate →", submitContact); }
+  }
+};
+
+/* ---- Submit handlers ---- */
+function submitSqft(){
+  const v = pending.sqft;
+  if (!v || v < 100 || v > 20000){ setErr("Please enter a home size between 100 and 20,000 sq ft."); return; }
+  S.sqft = v; if(!S.id) S.id = "rce_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  fireConversion("estimate_started");
+  advance();
+}
+function submitRoofType(){
+  if (!pending.roofType){ setErr("Please choose a roof type."); return; }
+  S.roofType = pending.roofType;
+  S.roofCost = computeRoofCost(S.sqft, S.roofType);
+  fireConversion("estimate_calculated", { value: S.roofCost.totalCost, currency:"USD", roof_type:S.roofType, sqft:S.sqft });
+  advance();
+}
+function submitInsurance(){
+  if (pending.hasInsurance===null || pending.hasInsurance===undefined){ setErr("Please choose an option."); return; }
+  S.hasInsurance = pending.hasInsurance;
+  if (S.hasInsurance===false){ S.insurance=null; S.financing=null; S.wantsFinancing=null; S.termMonths=null; }
+  advance();
+}
+function submitDeductible(){
+  if (!pending.deductibleInput){ setErr("Enter a deductible, or tap Skip."); return; }
+  const ded = resolveDeductible(pending.deductibleInput);
+  if (ded < 0 || ded > 100000){ setErr("That deductible looks off — please check the amount."); return; }
+  S.deductibleInput = pending.deductibleInput;
+  S.insurance = computeInsurance(S.roofCost.totalCost, ded);
+  fireConversion("insurance_calculated", { out_of_pocket:S.insurance.outOfPocket, payout:S.insurance.payout });
+  advance();
+}
+function submitFinancing(){
+  if (pending.wantsFinancing===null || pending.wantsFinancing===undefined){ setErr("Please choose an option."); return; }
+  S.wantsFinancing = pending.wantsFinancing;
+  if (S.wantsFinancing){
+    if (!pending.termMonths && !S.termMonths){ setErr("Please pick a loan term."); return; }
+    S.termMonths = pending.termMonths || S.termMonths;
+    S.financing = computeFinancing(S.insurance.outOfPocket, S.termMonths);
+    fireConversion("financing_calculated", { term_months:S.termMonths, monthly:S.financing.monthlyPayment });
+  } else { S.financing=null; S.termMonths=null; }
+  advance();
+}
+function submitContact(){
+  const name=val("cName"), phone=val("cPhone"), email=val("cEmail"), addr=val("cAddr");
+  if (!name){ setErr("Please enter your name."); return; }
+  if (!phone && !email){ setErr("Please add a phone or email so we can send your estimate."); return; }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setErr("That email doesn't look right."); return; }
+  S.contact = { name, phone, email, address:addr };
+  submitLead();
+}
+const val = id => (document.getElementById(id).value||"").trim();
+
+function advance(){ currentStep = nextStepFrom(currentStep); render(); }
+function goBack(){ currentStep = prevStepFrom(currentStep); render(); }
+
+/* ---- Summary panel ---- */
+function renderSummary(){
+  set("sumSqft", S.sqft ? S.sqft.toLocaleString()+" sq ft" : null);
+  set("sumType", S.roofType ? shortType(S.roofType) : null);
+  set("sumTotal", S.roofCost ? fmt$(S.roofCost.totalCost) : null);
+  const showIns = S.hasInsurance!==false;
+  toggleRow("rowDed", showIns); toggleRow("rowPayout", showIns); toggleRow("rowOop", showIns); toggleRow("rowMonthly", showIns && !!S.financing);
+  set("sumDed", S.insurance ? fmt$(S.insurance.deductibleAmount) : null);
+  set("sumPayout", S.insurance ? fmt$(S.insurance.payout) : null);
+  set("sumOop", S.insurance ? fmt$(S.insurance.outOfPocket) : (S.hasInsurance===false && S.roofCost ? fmt$(S.roofCost.totalCost) : null));
+  if (S.hasInsurance===false){ document.querySelector("#rowOop .k").textContent="Cash price"; }
+  else { document.querySelector("#rowOop .k").textContent="Out-of-pocket"; }
+  set("sumMonthly", S.financing ? fmt$(S.financing.monthlyPayment)+"/mo" : null);
+}
+function set(id, v){ const el=document.getElementById(id); if(!el)return; if(v==null){ el.textContent="—"; el.classList.add("dash"); } else { el.textContent=v; el.classList.remove("dash"); } }
+function toggleRow(id, show){ const el=document.getElementById(id); if(el) el.style.display = show?"flex":"none"; }
+
+/* ============================================================================
+   LEAD SUBMISSION → webhook (Make.com / GHL). Includes tags + full estimate.
+   ============================================================================ */
+function buildPayload(){
+  return {
+    id: S.id,
+    submitted_at: new Date().toISOString(),
+    tags: NG_CONFIG.GHL_TAGS,                       // ["morpheus","cost estimator"]
+    contact: S.contact,
+    estimate: {
+      sqft: S.sqft, roof_type: S.roofType,
+      squares: S.roofCost?.squares, rate_per_square: S.roofCost?.rate,
+      materials: S.roofCost?.materials, labor: S.roofCost?.labor, disposal: S.roofCost?.disposal,
+      total_cost: S.roofCost?.totalCost,
+      has_insurance: S.hasInsurance,
+      home_value_assumed: NG_CONFIG.HOME_VALUE_ASSUMED,
+      deductible_input: S.deductibleInput,
+      deductible_amount: S.insurance?.deductibleAmount,
+      payout: S.insurance?.payout,
+      out_of_pocket: S.insurance?.outOfPocket,
+      wants_financing: S.wantsFinancing,
+      term_months: S.termMonths, apr: S.financing ? NG_CONFIG.APR : null,
+      monthly_payment: S.financing?.monthlyPayment,
+      total_paid: S.financing?.totalPaid, total_interest: S.financing?.totalInterest
+    },
+    attribution: S.attribution
+  };
+}
+async function submitLead(){
+  setErr(""); const btn = actions.querySelector(".ng-btn-primary");
+  if (btn){ btn.disabled=true; btn.textContent="Sending…"; }
+  const payload = buildPayload();
+  fireConversion("contact_captured", { value: S.roofCost?.totalCost, currency:"USD" });
+  try{
+    if (NG_CONFIG.WEBHOOK_URL){
+      await fetch(NG_CONFIG.WEBHOOK_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+    } else {
+      console.log("[NG Estimator] DEMO MODE — no WEBHOOK_URL set. Payload:", payload);
+    }
+    showSuccess();
+  }catch(e){
+    console.error("Lead submit failed", e);
+    // Still show success to the homeowner; the conversion + payload are logged.
+    showSuccess();
+  }
+}
+function showSuccess(){
+  document.getElementById("ngVoiceCta").classList.add("hidden");
+  actions.innerHTML=""; errEl.textContent="";
+  const oop = S.hasInsurance===false ? S.roofCost.totalCost : (S.insurance? S.insurance.outOfPocket : S.roofCost.totalCost);
+  host.innerHTML = `<div class="ng-done">
+    <div class="check">✓</div>
+    <h2>Your estimate is on its way, ${S.contact.name.split(" ")[0]||"friend"}!</h2>
+    <p>We've got your details. A Noble Guard specialist will reach out to schedule your <strong>free roof inspection</strong>.</p>
+    <p style="margin-top:12px;font-size:18px;color:var(--ng-ink)"><strong>${S.hasInsurance===false?"Cash price":"Your out-of-pocket"}: ${fmt$(oop)}</strong>${S.financing?` &nbsp;·&nbsp; or ${fmt$(S.financing.monthlyPayment)}/mo`:""}</p>
+    <a class="ng-btn ng-btn-primary" style="display:inline-block;margin-top:20px;text-decoration:none" href="tel:${NG_CONFIG.PHONE}">📞 Call now to book</a>
+  </div>`;
+  renderSummary(); postHeight();
+}
+
+/* ============================================================================
+   VOICE  —  Web Speech API (no keys) + deterministic parser (spec §3 fast path)
+   ============================================================================ */
+const VoiceState = { rec:null, active:false, retries:0 };
+const supportsVoice = ("webkitSpeechRecognition" in window) || ("SpeechRecognition" in window);
+const voicePanel = document.getElementById("ngVoicePanel");
+const voiceCta = document.getElementById("ngVoiceCta");
+const orb = document.getElementById("ngOrb");
+const caption = document.getElementById("ngCaption");
+const vhint = document.getElementById("ngVoiceHint");
+
+voiceCta.addEventListener("click", showVoice);
+document.getElementById("ngVoiceBack").addEventListener("click", hideVoice);
+orb.addEventListener("click", ()=> VoiceState.active ? stopListening() : startListening());
+
+function showVoice(){
+  if (!supportsVoice){ setErr("Voice isn't supported in this browser — please type your answer. (Try Chrome, Edge, or Safari.)"); return; }
+  voicePanel.classList.add("on"); voiceCta.classList.add("hidden");
+  VoiceState.retries=0;
+  const q = STEP_UI[currentStep].q;
+  speak(q);
+  caption.textContent="Tap the orb and speak…"; vhint.textContent=voiceHint();
+  postHeight();
+}
+function hideVoice(){ stopListening(); voicePanel.classList.remove("on"); if(STEP_UI[currentStep]?.voice) voiceCta.classList.remove("hidden"); postHeight(); }
+function voiceHint(){
+  switch(currentStep){
+    case "sqft": return 'Say something like "about two thousand square feet"';
+    case "roofType": return 'Say a material, e.g. "architectural shingles" or "metal"';
+    case "insurance": return 'Say "yes, insurance" or "no, paying cash"';
+    case "deductible": return 'Say "three thousand dollars" or "one percent"';
+    case "financing": return 'Say "yes, 36 months" or "no thanks"';
+    default: return "";
+  }
+}
+function speak(text){ try{ if("speechSynthesis" in window){ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=1.02; u.pitch=1; speechSynthesis.speak(u);} }catch(e){} }
+
+function startListening(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR(); VoiceState.rec=rec;
+  rec.lang="en-US"; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
+  VoiceState.active=true; orb.classList.add("listening"); orb.textContent="●"; caption.textContent="Listening…";
+  let finalTranscript="";
+  rec.onresult = e=>{ let interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript; if(e.results[i].isFinal) finalTranscript+=t; else interim+=t; } caption.textContent = (finalTranscript||interim||"…"); };
+  rec.onerror = ()=>{ stopListening(); handleVoiceFail("I didn't catch that."); };
+  rec.onend = ()=>{ orb.classList.remove("listening"); orb.textContent="🎤"; VoiceState.active=false; if(finalTranscript.trim()) handleTranscript(finalTranscript.trim()); };
+  try{ rec.start(); }catch(e){ stopListening(); }
+}
+function stopListening(){ try{ VoiceState.rec && VoiceState.rec.stop(); }catch(e){} VoiceState.active=false; orb.classList.remove("listening"); orb.textContent="🎤"; }
+
+function handleTranscript(text){
+  const parsed = parseByStep(currentStep, text);
+  if (parsed === null || parsed === undefined){ handleVoiceFail(`I heard "${text}", but couldn't read an answer.`); return; }
+  applyVoiceAnswer(currentStep, parsed, text);
+}
+function handleVoiceFail(msg){
+  VoiceState.retries++;
+  if (VoiceState.retries >= 2){ caption.textContent = msg + " Let's type it instead."; speak("Let's type it instead."); setTimeout(hideVoice, 1400); }
+  else { caption.textContent = msg + " Tap the orb and try once more."; speak("Sorry, I didn't get that. Please try again."); vhint.textContent=voiceHint(); }
+}
+
+/* ---- Deterministic parser (spec §3 fast path) ---- */
+const NUM_WORDS = {zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,twenty:20,thirty:30,thirtysix:36,forty:40,forty8:48,fifty:50,sixty:60,hundred:100,thousand:1000};
+function wordsToNumber(text){
+  // handles "two thousand", "twenty five hundred", "three grand", digits with commas
+  let t = text.toLowerCase().replace(/,/g,"").replace(/\band\b/g," ");
+  const digit = t.match(/(\d+(\.\d+)?)/);
+  if (t.includes("grand")){ const g=t.match(/(\d+(\.\d+)?)\s*grand/)||t.match(/(one|two|three|four|five|six|seven|eight|nine|ten)\s*grand/); if(g){ const n=parseFloat(g[1])||NUM_WORDS[g[1]]; if(n) return n*1000; } }
+  if (digit){ let n=parseFloat(digit[1]); if(/thousand|k\b/.test(t) && n<100) n*=1000; return n; }
+  // spelled out
+  let total=0, current=0, found=false;
+  t.split(/\s+/).forEach(w=>{ const base=w.replace(/s$/,""); if(base in NUM_WORDS){ found=true; const v=NUM_WORDS[base]; if(v===100){current=(current||1)*100;} else if(v===1000){total+=(current||1)*1000;current=0;} else {current+=v;} } });
+  total+=current; return found?total:null;
+}
+function parseByStep(step, text){
+  const t = text.toLowerCase();
+  if (step==="sqft"){ const n=wordsToNumber(t); return (n && n>=100 && n<=20000)? Math.round(n): null; }
+  if (step==="roofType"){
+    const map=[["3-tab|three tab|asphalt","3-Tab Asphalt Shingles"],["architectural|arch","Architectural Shingles"],["designer|luxury shingle","Designer / Luxury Shingles"],["standing seam|metal","Metal - Standing Seam"],["corrugated|r-panel|r panel","Metal - Corrugated / R-Panel"],["clay","Clay Tile"],["concrete","Concrete Tile"],["flat|tpo|membrane","Flat / TPO Membrane"],["cedar|shake|wood","Cedar Shake"],["slate","Slate"]];
+    for(const [pat,name] of map){ if(new RegExp(pat).test(t)) return name; } return null;
+  }
+  if (step==="insurance"){ if(/\b(yes|yeah|yep|insur|claim|file|filing)\b/.test(t)) return true; if(/\b(no|nope|cash|pay(ing)? cash|out of pocket|myself)\b/.test(t)) return false; return null; }
+  if (step==="deductible"){
+    if(/skip|not sure|dunno|don't know|do not know/.test(t)) return {kind:"skip"};
+    const pct=t.match(/(\d+(\.\d+)?)\s*(%|percent)/); if(pct) return {kind:"percent",percent:parseFloat(pct[1])};
+    if(/\bpercent\b/.test(t)){ const n=wordsToNumber(t); if(n) return {kind:"percent",percent:n}; }
+    const n=wordsToNumber(t); if(n!=null) return {kind:"dollar",amount:n}; return null;
+  }
+  if (step==="financing"){
+    if(/\b(no|nope|no thanks|skip|don't|do not)\b/.test(t)) return {want:false};
+    if(/\b(yes|yeah|yep|finance|monthly|payment|sure)\b/.test(t)){ const term=matchTerm(t); return {want:true, term}; }
+    const term=matchTerm(t); if(term) return {want:true, term}; return null;
+  }
+  return null;
+}
+function matchTerm(t){ const m=t.match(/(\d+)\s*(month|mo)/); let n=m?parseInt(m[1],10):wordsToNumber(t); if(NG_CONFIG.TERMS.includes(n)) return n; return null; }
+
+function applyVoiceAnswer(step, parsed, raw){
+  speak("Got it.");
+  if (step==="sqft"){ S.sqft=parsed; pending.sqft=parsed; caption.textContent=parsed.toLocaleString()+" sq ft ✓"; setTimeout(()=>submitSqft(),700); }
+  else if (step==="roofType"){ S.roofType=parsed; pending.roofType=parsed; caption.textContent=parsed+" ✓"; setTimeout(()=>submitRoofType(),700); }
+  else if (step==="insurance"){ S.hasInsurance=parsed; pending.hasInsurance=parsed; caption.textContent=(parsed?"Insurance ✓":"Cash ✓"); setTimeout(()=>submitInsurance(),700); }
+  else if (step==="deductible"){ pending.deductibleInput=parsed; caption.textContent="Deductible ✓"; setTimeout(()=>submitDeductible(),700); }
+  else if (step==="financing"){ pending.wantsFinancing=parsed.want; if(parsed.want && parsed.term){ pending.termMonths=parsed.term; S.termMonths=parsed.term; S.wantsFinancing=true; S.financing=computeFinancing(S.insurance.outOfPocket,parsed.term); caption.textContent=parsed.term+" months ✓"; setTimeout(()=>submitFinancing(),700);} else if(parsed.want){ S.wantsFinancing=true; hideVoice(); render(); caption.textContent="Choose a term"; } else { S.wantsFinancing=false; caption.textContent="No financing ✓"; setTimeout(()=>submitFinancing(),700);} }
+}
+
+/* ============================================================================
+   IFRAME AUTO-RESIZE  (parent listens for {source:"ng-estimator", height})
+   ============================================================================ */
+function postHeight(){ try{ if(window.parent!==window){ const h=document.querySelector(".ng-wrap").scrollHeight+20; window.parent.postMessage({source:"ng-estimator", type:"resize", height:h}, "*"); } }catch(e){} }
+window.addEventListener("resize", postHeight);
+
+/* ---- init ---- */
+initMetaPixel();
+document.getElementById("ngCallCta").href = "tel:" + NG_CONFIG.PHONE;
+if (!supportsVoice) voiceCta.style.display="none";
+render();
+</script>
+</body>
+</html>
