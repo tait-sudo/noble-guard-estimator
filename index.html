@@ -9,7 +9,7 @@
 /* ============================================================================
    NOBLE GUARD ROOFING — ROOF REPLACEMENT COST ESTIMATOR
    Self-contained widget. Works as an <iframe> embed AND a standalone ad page.
-   Math verified against "Roof Replacement Cost Estimator.xlsx" cells C6–C32. Redeploy marker: live12.
+   Math verified against "Roof Replacement Cost Estimator.xlsx" cells C6–C32. Redeploy marker: live13 (home-value step).
    ============================================================================ */
 :root{
   --ng-ivory:#f8f6f0;
@@ -297,7 +297,7 @@ const fmt$2 = n => "$" + n.toLocaleString("en-US", {minimumFractionDigits:2, max
    ============================================================================ */
 const S = {
   sqft:null, roofType:null, roofCost:null,
-  hasInsurance:null, deductibleInput:null, insurance:null,
+  hasInsurance:null, homeValue:null, deductibleInput:null, insurance:null,
   wantsFinancing:null, termMonths:null, financing:null,
   contact:{ name:"", phone:"", email:"", address:"" },
   attribution:{}, id:null, milestones:{},
@@ -352,14 +352,14 @@ function fireConversion(name, data){
 /* ============================================================================
    STEP DEFINITIONS  +  BRANCHING STATE MACHINE
    ============================================================================ */
-const STEPS = ["sqft","roofType","insurance","deductible","financing","contact"];
+const STEPS = ["sqft","roofType","insurance","homeValue","deductible","financing","contact"];
 let stepIndex = 0;
 
 function nextStepFrom(cur){
   if (cur === "insurance" && S.hasInsurance === false) return "contact"; // uninsured → contact
   if (cur === "deductible" && S.wantsFinancing === false) return "contact";
   if (cur === "financing") return "contact";
-  const order = ["sqft","roofType","insurance","deductible","financing","contact"];
+  const order = ["sqft","roofType","insurance","homeValue","deductible","financing","contact"];
   return order[order.indexOf(cur) + 1];
 }
 function prevStepFrom(cur){
@@ -368,7 +368,7 @@ function prevStepFrom(cur){
     if (S.wantsFinancing === false) return "deductible";
     return "financing";
   }
-  const order = ["sqft","roofType","insurance","deductible","financing","contact"];
+  const order = ["sqft","roofType","insurance","homeValue","deductible","financing","contact"];
   return order[order.indexOf(cur) - 1] || "sqft";
 }
 let currentStep = "sqft";
@@ -386,6 +386,7 @@ function chipData(){
     { key:"sqft",      label: S.sqft ? S.sqft.toLocaleString()+" sq ft" : "Home size" },
     { key:"roofType",  label: S.roofType ? shortType(S.roofType) : "Roof type" },
     { key:"insurance", label: S.hasInsurance===null ? "Insurance" : (S.hasInsurance ? "Insured" : "Cash") },
+    ...(S.hasInsurance!==false ? [{ key:"homeValue", label: S.homeValue ? fmt$(S.homeValue) : "Home value" }] : []),
     ...(S.hasInsurance!==false ? [{ key:"deductible", label: S.insurance ? "Deductible set" : "Deductible" }] : []),
     ...(S.hasInsurance!==false ? [{ key:"financing", label: S.wantsFinancing===null?"Financing":(S.wantsFinancing?"Financed":"No financing") }] : []),
     { key:"contact",   label:"Your info" }
@@ -405,6 +406,7 @@ function isChipDone(k){
   if (k==="sqft") return !!S.sqft;
   if (k==="roofType") return !!S.roofType;
   if (k==="insurance") return S.hasInsurance!==null;
+  if (k==="homeValue") return !!S.homeValue;
   if (k==="deductible") return !!S.insurance;
   if (k==="financing") return S.wantsFinancing!==null;
   return false;
@@ -420,7 +422,7 @@ function render(){
   // agent drives set_field → render() to keep the panel live underneath.
   const voiceOpen = document.getElementById("ngVoicePanel").classList.contains("on");
   if (!voiceOpen) hideVoice();
-  const stepNo = ["sqft","roofType","insurance","deductible","financing","contact"].indexOf(currentStep)+1;
+  const stepNo = ["sqft","roofType","insurance","homeValue","deductible","financing","contact"].indexOf(currentStep)+1;
   const defs = STEP_UI[currentStep];
   host.innerHTML = `<div class="ng-step-count">Step ${visibleStepNumber()} of ${visibleStepTotal()}</div>
     <div class="ng-q">${defs.q}</div><div class="ng-help">${defs.help||""}</div>
@@ -439,7 +441,7 @@ function visibleStepNumber(){
 function visibleStepTotal(){ return buildVisibleSeq().length; }
 function buildVisibleSeq(){
   const seq = ["sqft","roofType","insurance"];
-  if (S.hasInsurance!==false){ seq.push("deductible"); seq.push("financing"); }
+  if (S.hasInsurance!==false){ seq.push("homeValue"); seq.push("deductible"); seq.push("financing"); }
   seq.push("contact");
   return seq;
 }
@@ -507,6 +509,22 @@ const STEP_UI = {
       pending.hasInsurance = S.hasInsurance;
     },
     actions(){ const b=primaryBtn("Continue", submitInsurance, S.hasInsurance!==null); b.id="ngPrimary"; }
+  },
+  homeValue:{
+    q:"What's your home's estimated value?", voice:true,
+    help:"We use this to calculate your deductible when it's a percent of your home value. A rough number is fine.",
+    body(el){
+      el.innerHTML = `<div class="ng-suffix-wrap">
+        <span class="ng-suffix" style="left:16px;right:auto">$</span>
+        <input class="ng-field" id="fHomeValue" style="padding-left:34px" type="text" inputmode="numeric" placeholder="e.g. 300,000" autocomplete="off"/></div>`;
+      const inp = el.querySelector("#fHomeValue");
+      if (S.homeValue) inp.value = S.homeValue.toLocaleString();
+      inp.focus();
+      inp.addEventListener("input", ()=>{ pending.homeValue = parseInt(inp.value.replace(/[^\d]/g,""),10)||null; });
+      inp.addEventListener("keydown", e=>{ if(e.key==="Enter") submitHomeValue(); });
+      pending.homeValue = S.homeValue;
+    },
+    actions(){ primaryBtn("Continue", submitHomeValue); }
   },
   deductible:{
     q:"What's your insurance deductible?", voice:true,
@@ -603,9 +621,21 @@ function submitInsurance(){
   if (S.hasInsurance===false){ S.insurance=null; S.financing=null; S.wantsFinancing=null; S.termMonths=null; }
   advance();
 }
+function submitHomeValue(){
+  const v = pending.homeValue;
+  if (!v || v < 10000 || v > 100000000){ setErr("Please enter your home's estimated value (between $10,000 and $100,000,000)."); return; }
+  S.homeValue = v;
+  // If the deductible was already set (e.g. user went Back and changed home value),
+  // recompute it against the new home value so percent/skip deductibles stay accurate.
+  if (S.deductibleInput){
+    const ded = resolveDeductible(S.deductibleInput, S.homeValue);
+    S.insurance = computeInsurance(S.roofCost.totalCost, ded);
+  }
+  advance();
+}
 function submitDeductible(){
   if (!pending.deductibleInput){ setErr("Enter a deductible, or tap Skip."); return; }
-  const ded = resolveDeductible(pending.deductibleInput);
+  const ded = resolveDeductible(pending.deductibleInput, S.homeValue || NG_CONFIG.HOME_VALUE_ASSUMED);
   if (ded < 0 || ded > 100000){ setErr("That deductible looks off — please check the amount."); return; }
   S.deductibleInput = pending.deductibleInput;
   S.insurance = computeInsurance(S.roofCost.totalCost, ded);
@@ -674,7 +704,8 @@ function buildPayload(){
       materials: S.roofCost?.materials, labor: S.roofCost?.labor, disposal: S.roofCost?.disposal,
       total_cost: S.roofCost?.totalCost,
       has_insurance: S.hasInsurance,
-      home_value_assumed: NG_CONFIG.HOME_VALUE_ASSUMED,
+      home_value: S.homeValue,
+      home_value_assumed: S.homeValue || NG_CONFIG.HOME_VALUE_ASSUMED,
       deductible_input: S.deductibleInput,
       deductible_amount: S.insurance?.deductibleAmount,
       payout: S.insurance?.payout,
@@ -845,6 +876,12 @@ function setFieldFromAgent(field, value){
       const b = toBool(value);
       currentStep="insurance"; S.hasInsurance=b; pending.hasInsurance=b; submitInsurance();
       return b ? "Great — we'll estimate this through insurance." : "Understood — we'll show the cash price.";
+    }
+    if (f==="homevalue"||f==="value"||f==="homeprice"||f==="propertyvalue"||f==="homeworth"){
+      const n = (typeof value==="number") ? value : wordsToNumber(String(value));
+      if (!n || n<10000 || n>100000000) return "That home value seems off — I need a number like three hundred thousand dollars.";
+      currentStep="homeValue"; S.homeValue=Math.round(n); pending.homeValue=Math.round(n); submitHomeValue();
+      return `Home value set to ${fmt$(Math.round(n))}.`;
     }
     if (f==="deductible"){
       const d = parseDeductibleValue(value);
