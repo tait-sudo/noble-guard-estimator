@@ -9,7 +9,7 @@
 /* ============================================================================
    NOBLE GUARD ROOFING — ROOF REPLACEMENT COST ESTIMATOR
    Self-contained widget. Works as an <iframe> embed AND a standalone ad page.
-   Math verified against "Roof Replacement Cost Estimator.xlsx" cells C6–C32. Redeploy marker: live13 (home-value step).
+   Math verified against "Roof Replacement Cost Estimator.xlsx" cells C6–C32.
    ============================================================================ */
 :root{
   --ng-ivory:#f8f6f0;
@@ -189,6 +189,7 @@ html,body{background:var(--ng-ivory);color:var(--ng-ink);font-family:var(--ng-fo
       <h3>Your Estimate</h3>
       <div class="sub">Updates live as you answer</div>
       <div class="ng-row"><span class="k">Home size</span><span class="v dash" id="sumSqft">—</span></div>
+      <div class="ng-row" id="rowStories"><span class="k">Stories</span><span class="v dash" id="sumStories">—</span></div>
       <div class="ng-row"><span class="k">Roof type</span><span class="v dash" id="sumType">—</span></div>
       <div class="ng-row hero"><span class="k">Total replacement</span><span class="v dash" id="sumTotal">—</span></div>
       <div class="ng-row" id="rowDed"><span class="k">Your deductible</span><span class="v dash" id="sumDed">—</span></div>
@@ -228,7 +229,7 @@ const NG_CONFIG = {
   // browser, no backend needed). Paste the Agent ID from the ElevenLabs
   // dashboard here. Leave "" and the widget gracefully falls back to the
   // built-in browser-voice flow so the estimator never dead-ends.
-  ELEVENLABS_AGENT_ID: "agent_8101kwjn6by4e07sy5czgddts79b",
+  ELEVENLABS_AGENT_ID: "",
 
   // Meta Pixel. Paste your Pixel ID from Meta Events Manager (e.g. "1234567890").
   // Leave "" and tracking stays fully dormant — no library loads, no requests.
@@ -241,6 +242,10 @@ const NG_CONFIG = {
   DEFAULT_DEDUCTIBLE_PERCENT: 1,     // Roof Calculator!C19 default
   APR: 7.99,                         // Roof Calculator!C28
   TERMS: [12, 24, 36, 48, 60],       // Roof Calculator!C27 options
+
+  // Roof area as a fraction of living area, by number of stories.
+  // A multi-story home's roof covers less than its total living area.
+  STORY_FACTORS: { 1: 1.0, 2: 0.70, 3: 0.55 },
 
   // Rate per roofing square (Pricing Data!A2:B11).
   ROOF_TYPES: [
@@ -263,13 +268,22 @@ const NG_CONFIG = {
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 const rateFor = t => (NG_CONFIG.ROOF_TYPES.find(r => r.name === t) || {}).rate || 0;
 
-function computeRoofCost(sqft, roofType){                       // C7,C11–C15
-  const squares = sqft * 1.5 / 100;
+function computeRoofCost(sqft, roofType, stories){             // C7,C11–C15
+  // Roof covers the FOOTPRINT, not total living area. A multi-story home has a
+  // smaller roof than its square footage suggests, but not a strict 1/stories
+  // split (rooflines, overhangs and shared footprint make the reduction gentler).
+  // Scale living area by a per-story factor before applying the 1.5
+  // pitch/overhang/waste factor. Defaults to 1 story when unknown.
+  const levels = Math.max(1, stories || 1);
+  const factor = NG_CONFIG.STORY_FACTORS[levels] || NG_CONFIG.STORY_FACTORS[3];
+  const footprint = sqft * factor;
+  const squares = footprint * 1.5 / 100;
   const rate = rateFor(roofType);
   const materials = round2(squares * rate * 0.55);
   const labor     = round2(squares * rate * 0.35);
   const disposal  = round2(squares * rate * 0.10);
   return { squares: round2(squares), rate, materials, labor, disposal,
+           stories: levels, footprint: round2(footprint),
            totalCost: round2(materials + labor + disposal) };
 }
 function resolveDeductible(input, homeValue = NG_CONFIG.HOME_VALUE_ASSUMED){  // C20
@@ -296,7 +310,7 @@ const fmt$2 = n => "$" + n.toLocaleString("en-US", {minimumFractionDigits:2, max
    STATE  +  ATTRIBUTION
    ============================================================================ */
 const S = {
-  sqft:null, roofType:null, roofCost:null,
+  sqft:null, stories:null, roofType:null, roofCost:null,
   hasInsurance:null, homeValue:null, deductibleInput:null, insurance:null,
   wantsFinancing:null, termMonths:null, financing:null,
   contact:{ name:"", phone:"", email:"", address:"" },
@@ -352,14 +366,14 @@ function fireConversion(name, data){
 /* ============================================================================
    STEP DEFINITIONS  +  BRANCHING STATE MACHINE
    ============================================================================ */
-const STEPS = ["sqft","roofType","insurance","homeValue","deductible","financing","contact"];
+const STEPS = ["sqft","stories","roofType","insurance","homeValue","deductible","financing","contact"];
 let stepIndex = 0;
 
 function nextStepFrom(cur){
   if (cur === "insurance" && S.hasInsurance === false) return "contact"; // uninsured → contact
   if (cur === "deductible" && S.wantsFinancing === false) return "contact";
   if (cur === "financing") return "contact";
-  const order = ["sqft","roofType","insurance","homeValue","deductible","financing","contact"];
+  const order = ["sqft","stories","roofType","insurance","homeValue","deductible","financing","contact"];
   return order[order.indexOf(cur) + 1];
 }
 function prevStepFrom(cur){
@@ -368,7 +382,7 @@ function prevStepFrom(cur){
     if (S.wantsFinancing === false) return "deductible";
     return "financing";
   }
-  const order = ["sqft","roofType","insurance","homeValue","deductible","financing","contact"];
+  const order = ["sqft","stories","roofType","insurance","homeValue","deductible","financing","contact"];
   return order[order.indexOf(cur) - 1] || "sqft";
 }
 let currentStep = "sqft";
@@ -384,6 +398,7 @@ const chipsEl = document.getElementById("ngChips");
 function chipData(){
   return [
     { key:"sqft",      label: S.sqft ? S.sqft.toLocaleString()+" sq ft" : "Home size" },
+    { key:"stories",   label: S.stories ? (S.stories===1?"1 story":S.stories+" stories") : "Stories" },
     { key:"roofType",  label: S.roofType ? shortType(S.roofType) : "Roof type" },
     { key:"insurance", label: S.hasInsurance===null ? "Insurance" : (S.hasInsurance ? "Insured" : "Cash") },
     ...(S.hasInsurance!==false ? [{ key:"homeValue", label: S.homeValue ? fmt$(S.homeValue) : "Home value" }] : []),
@@ -404,6 +419,7 @@ function renderChips(){
 }
 function isChipDone(k){
   if (k==="sqft") return !!S.sqft;
+  if (k==="stories") return !!S.stories;
   if (k==="roofType") return !!S.roofType;
   if (k==="insurance") return S.hasInsurance!==null;
   if (k==="homeValue") return !!S.homeValue;
@@ -422,7 +438,7 @@ function render(){
   // agent drives set_field → render() to keep the panel live underneath.
   const voiceOpen = document.getElementById("ngVoicePanel").classList.contains("on");
   if (!voiceOpen) hideVoice();
-  const stepNo = ["sqft","roofType","insurance","homeValue","deductible","financing","contact"].indexOf(currentStep)+1;
+  const stepNo = ["sqft","stories","roofType","insurance","homeValue","deductible","financing","contact"].indexOf(currentStep)+1;
   const defs = STEP_UI[currentStep];
   host.innerHTML = `<div class="ng-step-count">Step ${visibleStepNumber()} of ${visibleStepTotal()}</div>
     <div class="ng-q">${defs.q}</div><div class="ng-help">${defs.help||""}</div>
@@ -440,7 +456,7 @@ function visibleStepNumber(){
 }
 function visibleStepTotal(){ return buildVisibleSeq().length; }
 function buildVisibleSeq(){
-  const seq = ["sqft","roofType","insurance"];
+  const seq = ["sqft","stories","roofType","insurance"];
   if (S.hasInsurance!==false){ seq.push("homeValue"); seq.push("deductible"); seq.push("financing"); }
   seq.push("contact");
   return seq;
@@ -476,6 +492,27 @@ const STEP_UI = {
       pending.sqft = S.sqft;
     },
     actions(){ primaryBtn("Continue", submitSqft); }
+  },
+  stories:{
+    q:"How many stories is your home?", voice:true,
+    help:"Your roof only covers the footprint, so a 2-story home has a smaller roof than its square footage suggests. This keeps your estimate accurate.",
+    body(el){
+      const opts = [
+        { v:1, label:"1 story",           blurb:"Single level" },
+        { v:2, label:"2 stories",         blurb:"~30% smaller roof area" },
+        { v:3, label:"3+ stories",        blurb:"~45% smaller roof area" }
+      ];
+      el.innerHTML = `<div class="ng-options">${opts.map(o=>
+        `<button class="ng-opt ${S.stories===o.v?'sel':''}" data-v="${o.v}">
+           <span>${o.label}</span><small>${o.blurb}</small></button>`).join("")}</div>`;
+      el.querySelectorAll(".ng-opt").forEach(btn=>btn.onclick=()=>{
+        el.querySelectorAll(".ng-opt").forEach(b=>b.classList.remove("sel"));
+        btn.classList.add("sel"); pending.stories = parseInt(btn.dataset.v,10);
+        document.getElementById("ngPrimary").disabled=false;
+      });
+      pending.stories = S.stories;
+    },
+    actions(){ const b=primaryBtn("Continue", submitStories, !!S.stories); b.id="ngPrimary"; }
   },
   roofType:{
     q:"What type of roof do you want?", voice:true,
@@ -608,10 +645,19 @@ function submitSqft(){
   fireConversion("estimate_started");
   advance();
 }
+function submitStories(){
+  const v = pending.stories;
+  if (!v || v < 1 || v > 3){ setErr("Please choose how many stories your home is."); return; }
+  S.stories = v;
+  // If a roof type was already priced (e.g. user went Back and changed stories),
+  // recompute so the footprint reflects the new number of levels.
+  if (S.roofType){ S.roofCost = computeRoofCost(S.sqft, S.roofType, S.stories); }
+  advance();
+}
 function submitRoofType(){
   if (!pending.roofType){ setErr("Please choose a roof type."); return; }
   S.roofType = pending.roofType;
-  S.roofCost = computeRoofCost(S.sqft, S.roofType);
+  S.roofCost = computeRoofCost(S.sqft, S.roofType, S.stories);
   fireConversion("estimate_calculated", { value: S.roofCost.totalCost, currency:"USD", roof_type:S.roofType, sqft:S.sqft });
   advance();
 }
@@ -669,6 +715,7 @@ function goBack(){ currentStep = prevStepFrom(currentStep); render(); }
 /* ---- Summary panel ---- */
 function renderSummary(){
   set("sumSqft", S.sqft ? S.sqft.toLocaleString()+" sq ft" : null);
+  set("sumStories", S.stories ? (S.stories===1?"1 story":(S.stories===3?"3+ stories":S.stories+" stories")) : null);
   set("sumType", S.roofType ? shortType(S.roofType) : null);
   set("sumTotal", S.roofCost ? fmt$(S.roofCost.totalCost) : null);
   const showIns = S.hasInsurance!==false;
@@ -699,7 +746,8 @@ function buildPayload(){
     handoff_reason: S.handoff_reason || null,
     contact: S.contact,
     estimate: {
-      sqft: S.sqft, roof_type: S.roofType,
+      sqft: S.sqft, stories: S.stories, roof_footprint: S.roofCost?.footprint,
+      roof_type: S.roofType,
       squares: S.roofCost?.squares, rate_per_square: S.roofCost?.rate,
       materials: S.roofCost?.materials, labor: S.roofCost?.labor, disposal: S.roofCost?.disposal,
       total_cost: S.roofCost?.totalCost,
@@ -865,6 +913,14 @@ function setFieldFromAgent(field, value){
       if (!n || n<100 || n>20000) return "That home size seems off — I need a number between 100 and 20,000 square feet.";
       currentStep="sqft"; S.sqft=Math.round(n); pending.sqft=Math.round(n); submitSqft();
       return `Home size set to ${Math.round(n).toLocaleString()} square feet.`;
+    }
+    if (f==="stories"||f==="story"||f==="levels"||f==="level"||f==="floors"||f==="floor"){
+      let n = (typeof value==="number") ? value : wordsToNumber(String(value));
+      if (!n){ const t=String(value||"").toLowerCase(); if(/\b(one|single|1)\b/.test(t))n=1; else if(/\b(two|2)\b/.test(t))n=2; else if(/\b(three|four|3|4|\+)\b/.test(t))n=3; }
+      n = Math.min(3, Math.max(1, Math.round(n||0)));
+      if (!n) return "How many stories is your home — one, two, or three or more?";
+      currentStep="stories"; S.stories=n; pending.stories=n; submitStories();
+      return `Got it — ${n===1?"a single-story home":n+" stories"}.`;
     }
     if (f==="rooftype"||f==="material"||f==="roof"){
       const name = matchRoofType(value);
